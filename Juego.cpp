@@ -5,6 +5,14 @@
 #include <algorithm>
 #include <random>
 
+
+//FALTA:
+/*
+ * Retroceder la cantidad de casillas correspondientes cuando se pasa de 63.
+ * En la clase casilla, idear la forma en la que vuelve a tirar si cae en una casilla Oca
+ * Terminar la funcion IniciarJuego(), creando una nueva ronda en caso de que se siga jugando
+*/
+
 //Creacion de la partida
 Juego::Juego(string n){
     this->NombrePartida = n;

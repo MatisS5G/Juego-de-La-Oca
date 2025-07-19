@@ -10,7 +10,7 @@ public:
     vector<Turno*> turnos;
     Ronda(int n);
     void CargarTurno(Turno* t);
-    void JugarRonda(Tablero* tab, Dado* dado);
+    bool JugarRonda(Tablero* tab, Dado* dado);
 };
 
 #endif // RONDA_H
