@@ -1,30 +1,50 @@
-#include "Juego.h"
 #include <iostream>
-#include "Ronda.h"
-#include "Turno.h"
 #include <algorithm>
 #include <random>
 
+#include "Juego.h"
+#include "Ronda.h"
+#include "Turno.h"
+#include "Tablero.h"
+#include "Dado.h"
+#include "Ficha.h"
+#include "Casillas.h"
+
+using namespace std;
 
 //FALTA:
 /*
- * Retroceder la cantidad de casillas correspondientes cuando se pasa de 63.
- * En la clase casilla, idear la forma en la que vuelve a tirar si cae en una casilla Oca
- * Terminar la funcion IniciarJuego(), creando una nueva ronda en caso de que se siga jugando
+ * Terminar la funcion FinalizarPartida().
+ * Agregar la funcion de los mensajes y ver que tan viable es implementarla de la forma que pense.
+ * Terminar de documentar todo, ver como se documenta bien a forma de teoria.
 */
 
-//Creacion de la partida
-Juego::Juego(string n){
+// Constructor de Juego: inicializa el nombre de la partida
+Juego::Juego(){
+    string n;
+    cout << "Ingrese el Nombre de la Partida: ";
+    cin >> n;
+    cout << endl;
     this->NombrePartida = n;
+    this->dadoOca = new Dado();
+    this->tablero = new Tablero();
 }
 
-//Carga de las configuraciones por defecto de la partida
+// Destructor de Juego: elimina todas las entidades dinamicas
+Juego::~Juego(){
+    delete dadoOca;
+    delete tablero;
+    for (auto j : this->Jugadores) delete j;
+}
+
+// Carga de las configuraciones por defecto del juego(dado y tablero)
 void Juego::CargarPartida(){
-    this->dadoOca.ElegirDado();
-    this->Tablero.SetTablero();
+    this->dadoOca->ElegirDado();
+    this->tablero->SetTablero();
+    cout << "Carga defecto" << endl;
 }
 
-//Carga de los jugadores para la partida, maximo de 4 jugadores, con nombre y posicion inicial en 0
+// Carga de los jugadores de la partida con su nombre y posicion inicial
 void Juego::CargarJugadores(){
     int TotJugadores;
     string nombreJ;
@@ -33,62 +53,110 @@ void Juego::CargarJugadores(){
     for (int i=0;i<TotJugadores;i++){
         cout << "ingrese el nombre del jugador " << i+1 << ": ";
         cin >> nombreJ;
-        Ficha* jug = new Ficha(nombreJ);
-        this->Jugadores.push_back(jug);
+        Ficha* jug = new Ficha(nombreJ); //Crea un nuevo jugador
+        this->Jugadores.push_back(jug); //Lo agrega al vector de jugadores
     }
 }
 
-//Eleccion del orden de juego para los jugadores
+
+
+// Sortea el orden de turnos de los jugadores tirando el dado
 void Juego::SortearOrdenTurnos(){
-    //vector de numeros para comprobar repetidos
-    std::vector<int> numeros;
 
-    //vector para almacenar a los jugadorse y su numero elegido
-    std::vector<std::pair<int,Ficha*>> jugadoresYnumeros;
+    // Vector para almacenar a los jugadores y su numero
+    std::vector<std::pair<int,Ficha*>> Tiradas;
+    bool repetido;
 
-    //Eleccion de numeros por los jugadores
-    cout<<"=== Eleccion de numeros para el orden de juego ==="<<endl;
+    cout << endl << "=== Tiraremos el dado para el orden de juego ===" << endl << endl;
+
     for (Ficha* j : this->Jugadores){
+        // Los jugadores tiran el dado
         int num;
-        cout << j->Get_nombre() << endl;
-        cout << "Elige un numero entre 1 y 4: ";
-        cin >> num;
+        cout << j->Get_nombre() << " -Tire el dado: ";
+        num = j->TirarDado(this->dadoOca);
+        cout << "..." << " _Saco el mumero: " << num << endl;
 
-        //validacion simple para evitar repetidos
-        while ((std::find(numeros.begin(),numeros.end(),num)) != numeros.end()){
-            cout << "Ese numero ya fue elegido. Elige otro: ";
-            cin >> num;
-        }
+        // Verifica si ese numero ya salió
+        do{
+            repetido = false;
+            for (auto t : Tiradas){
+                if (t.first == num){
+                    repetido = true;
+                    break;
+                }
+            }
+            if (repetido){
+                cout << "El numero ya salio, vuelva a tirar-" << endl;
+                num = j->TirarDado(this->dadoOca);
+                cout << "El jugador " << j->Get_nombre() << " saco el mumero: " << num << endl;
+            }
+        }while (repetido);
 
-        numeros.push_back(num);
-        jugadoresYnumeros.push_back({num,j});
+        // Almacena al jugador y el número que tiró
+        Tiradas.push_back({num,j});
     }
 
-    //Mezcla de numeros
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(jugadoresYnumeros.begin(),jugadoresYnumeros.end(),g);
+    // Ordena de mayor a menor segun el numero tirado
+    std::sort(Tiradas.begin(),Tiradas.end(),[](auto& a, auto& b){
+        return a.first > b.first;
+    });
 
-    //Actualizar el vector con el orden nuevo y mostrar el mismo
+    // Crea un nuevo vector con el orden correcto
     std::vector<Ficha*> NuevoOrdenJug;
-    cout << "=== Orden del juego ===" << endl;
+    cout << endl << "=== Orden del juego ===" << endl;
     int orden = 1;
-    for (auto par : jugadoresYnumeros){
+    for (auto par : Tiradas){
         cout << orden << "." << par.second->Get_nombre() << endl;
         cout << "Numero elegido: " << par.first << endl;
         NuevoOrdenJug.push_back(par.second);
         orden++;
     }
-    delete this->Jugadores;
+
+    cout << endl << endl;
+
+    // Remplaza al vector de jugadores con el nuevo orden
     this->Jugadores = NuevoOrdenJug;
 }
 
-//Desarollo del juego
+// Inicia la partida y ejecuta el ciclo de rondas hasta que alguien gane
 void Juego::IniciarPartida(){
+    // Crea la ronda actual
+    Ronda* RondaActual = new Ronda;
+    RondaActual->CrearRonda(); cout << endl << "Se crea la ronda" << endl;
 
+    // Carga los turnos de la primer ronda
+    for (auto j : this->Jugadores){
+        Turno* NuevoTurno = new Turno(j);
+        RondaActual->CargarTurno(NuevoTurno);
+        cout << endl << "Se carga un turno" << endl;
+    }
+
+    // Ciclo principal del juego
+    bool SeguirRonda = true;
+    while (SeguirRonda){
+        RondaActual->PasarRonda(); // Avanza a la siguiente ronda
+        cout << "Se está jugando la ronda Nro " << RondaActual->NroRonda << endl;
+        SeguirRonda = RondaActual->JugarRonda(this->tablero,this->dadoOca); // Devuelve false si alguien gana
+
+        if (RondaActual->NroRonda == 100) SeguirRonda = false;
+    }
+
+    // Busca al jugador que gano la partida (posicion 63).
+    auto Ganador =
+        find_if(Jugadores.begin(),Jugadores.end(),[](Ficha* j){
+            return (j->GetPosicion() == 63);
+        });
+
+    if (Ganador != Jugadores.end()) FinalizarPartida(Ganador); // Llama a FinalizarPartida con el ganador
+
+    delete RondaActual; // Libera la memoria de la ronda creada
 }
 
-//Aviso de finalizacion de partida
-void Juego::FinalizarPartida(){
-
+// Muestra un mensaje con el nombre de jugador que ganó la partida
+void Juego::FinalizarPartida(vector<Ficha*>::iterator ganador){
+    if (ganador == this->Jugadores.end()){
+        cout << "nadie gano" << endl;
+    }else{
+        cout << "El ganador de la partida es " << (*ganador)->Get_nombre() << endl;
+    }
 }

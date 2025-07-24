@@ -1,57 +1,73 @@
 #include "Ficha.h"
 
-//Constructor para crear un jugador
+// ===============================
+// Clase Ficha
+// Representa a un jugador en el juego:
+// - nombre del jugador
+// - posición en el tablero
+// - penalizaciones o turnos perdidos
+// Métodos:
+//   Getters de nombre, posición, turnos perdidos
+//   Métodos para mover, penalizar o liberar al jugador
+//   TirarDado(): lanza el dado y devuelve la cara superior
+// ===============================
+
+
+// Constructor: crea un jugador con su nombre y configura valores iniciales
 Ficha::Ficha(string n){
     this->nombre_jugador = n;
-    this->posicion_tablero = 1; //inicia en la posicion inicial del tablero
-    this->Penalizado = false;
-    this->CantTurnosPerdidos = 0;
+    this->posicion_tablero = 1;     // Posición inicial en el tablero
+    this->Penalizado = false;               // No esta penalizado al iniciar
+    this->CantTurnosPerdidos = 0;   // No tiene turnos perdidos al iniciar
 }
 
-//Devuelve el nombre de jugador
+
 string Ficha::Get_nombre(){
-    return this->nombre_jugador;
+    return this->nombre_jugador; // Devuelve el nombre de jugador
 }
 
-//Devuelve la posicion en el tablero del jugador
+
 int Ficha::GetPosicion(){
-    return this->posicion_tablero;
+    return this->posicion_tablero; // Devuelve la posicion actual en el tablero
 }
 
-//Devuelve la cantidad de turnos que pierde el jugador a futuro
+
 int Ficha::GetTurnoPerdidos(){
-    return this->CantTurnosPerdidos;
+    return this->CantTurnosPerdidos; // Devuelve la cantidad de turnos que el jugador tiene que perder
 }
+
 
 void Ficha::PerderTurnos(int t){
-    this->CantTurnosPerdidos = t;
+    this->CantTurnosPerdidos = t; // Asigan la cantidad de turnos que perderá
 }
 
-//El jugador pasa un turno sin jugar
+
+// Resta un turno perdido al jugador (simula cumplir un turno sin jugar)
 void Ficha::CumplirTurno(){
-    this->CantTurnosPerdidos -= 1;
+    if (this->CantTurnosPerdidos > 0) this->CantTurnosPerdidos -= 1;
 }
 
-//Mueve al jugador a otra posicion en el tablero
+
 void Ficha::MoverJugador(int nuevaPos){
-    this->posicion_tablero = nuevaPos;
+    this->posicion_tablero = nuevaPos; // Mueve al jugador a una nueva posicion en el tablero
 }
 
-//Atrapa al jugador en el pozo
+
 void Ficha::Penalizar(){
-    this->Penalizado = true;
+    this->Penalizado = true; // Penaliza al jugador(ej: cae en el pozo)
 }
 
-//Libera al jugador del pozo
+
 void Ficha::Liberar(){
-    this->Penalizado = false;
+    this->Penalizado = false; //Libera al jugador de la penalización
 }
 
-bool Ficha::Penalizado(){
-    return this->Penalizado;
+
+bool Ficha::Estado(){
+    return this->Penalizado; // Devuelve true si el jugador está penalizado, false si no lo está
 }
 
-//Metodo para que el jugador sea responsable de tirar el dado
+// Permite que el jugador tire el dado y devuelve la cara superior obtenida
 int Ficha::TirarDado(Dado* d){
     int CaraSuperior = d->Lanzar();
     return CaraSuperior;

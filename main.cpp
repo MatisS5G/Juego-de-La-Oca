@@ -1,12 +1,19 @@
 #include <QCoreApplication>
-//incluir el juego
+#include "Juego.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    //definir un juego e iniciar su ejecución
-    //plantear el desarrollo del juego
+    Juego MiPartida;
+
+    MiPartida.CargarPartida();
+
+    MiPartida.CargarJugadores();
+
+    MiPartida.SortearOrdenTurnos();
+
+    MiPartida.IniciarPartida();
 
     return a.exec();
 }
